@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html class="x-admin-sm" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>权限列表</title>
+    <header th:replace="header::html"></header>
+</head>
+
+<body>
+
+<div class="x-body">
+    <div class="layui-fluid">
+        <div class="layui-row  layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+
+                    <div class="layui-card-header">
+                        <form class="layui-form layui-col-md12 x-so" id="layuiFormPermission">
+                            <a class="layui-btn" id="crollAll">折叠展开</a>
+                            <a class="layui-btn" onclick="xadmin.open('新增权限','/api/permission/permission-add')"
+                               permission="sys:menu:add"><i class="layui-icon"></i>新增权限</a>
+                        </form>
+                    </div>
+
+                    <div class="layui-card-body ">
+                        <table class="layui-hide" id="menuTable" lay-filter="member"></table>
+                    </div>
+
+                    <div class="layui-card-body ">
+                        <script id="barDemo" type="text/html">
+                            <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var treetable, renderTable;
+
+    layui.config({
+        base: '/'
+    }).extend({
+        treetable: 'treetable-lay/treetable-lay/treetable'
+    }).use('treetable', function () {
+        var table = layui.table;
+        var $ = layui.jquery;
+        var treetable = layui.treetable;
+
+        renderTable = function () {
+            treetable.render({
+                // 渲染表格
+                treeColIndex: 1,// treetable新增参数
+                treeSpid: 0,
+                treeIdName: 'id',// treetable新增参数
+                treePidName: 'parentId',     // treetable新增参数
+                treeLinkage: true,        // treetable新增参数
+                elem: '#menuTable',
+                url: '/permission/menuAll',
+                cols: [
+                    [
+                        // {type: 'numbers'},
+                        {field: 'name', title: '名称'},
+                        {field: 'href', title: 'url'},
+                        {field: 'sort', title: '排序'},
+                        {field: 'permission', title: '资源标识'},
+                        {
+                            field: 'type', title: '类型', templet: function (d) {
+                                return d.type == '1' ? "菜单" : "按钮";
+                            }
+                        },
+                        {title: '操作', toolbar: '#barDemo'}
+                    ]
+                ]
+            });
+        };
+        renderTable();
+
+        /**
+         * 折叠
+         */
+        var croll = false;
+        $("#crollAll").click(function () {
+            if (croll) {
+                treetable.expandAll('#menuTable');
+                croll = false;
+            } else {
+                treetable.foldAll('#menuTable');
+                croll = true;
+            }
+        })
+
+        //监听工具条
+        table.on('tool(member)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'del') {
+                delfunction(data.id)
+            } else if (obj.event === 'edit') {
+                xadmin.open('编辑权限信息', '/api/permission/permission-edit/?id=' + data.id);
+            }
+        })
+
+        function delfunction(id) {
+            layer.msg('真的删除吗？', {
+                    time: 0 //不自动关闭
+                    , btn: ['必须啊', '再考虑下']
+                    , yes: function (index) {
+                        $.ajax({
+                            url: "/permission/delete",
+                            type: "DELETE",
+                            contentType: "application/json;charset-UTF-8",
+                            data: JSON.stringify(id),
+                            dataType: 'json',
+                            success: function (result) {
+                                if (result.code != 0) {
+                                    layer.msg(result.msg,
+                                        {
+                                            icon: 5
+                                            , anim: 6
+                                            , closeBtn: 0
+                                            , time: 2000
+                                        });
+                                } else {
+                                    layer.msg(result.msg, {
+                                        icon: 6
+                                        , anim: 6
+                                        , closeBtn: 0
+                                        , time: 1000
+                                    }, function (index1) {
+                                        layer.close(index1);
+                                        xadmin.father_reload();
+                                    });
+                                }
+                            },
+                        });
+                    }
+                }
+            );
+        };
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!doctype html>
+<html class="x-admin-sm" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>权限管理系统-新增用户</title>
+    <header th:replace="header::html"></header>
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-row">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="userName">
+                        <span class="x-red">*</span>用户名</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="userName" lay-verify="userName"
+                               name="userName"
+                               placeholder="用户名不能为空" required="" type="text">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="nickName">
+                        <span class="x-red">*</span>昵称</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="nickName" lay-verify="nikename"
+                               name="nickName"
+                               placeholder="昵称不能为空" required="" type="text">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="email">
+                        <span class="x-red">*</span>邮箱</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="email" lay-verify="email"
+                               name="email" placeholder="邮箱不能为空"
+                               required="" type="text">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="phone">
+                        <span class="x-red">*</span>电话</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="phone" lay-verify="phone"
+                               name="phone" placeholder="电话不能为空"
+                               required="" type="text">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="telePhone">联系电话</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="telePhone" lay-verify="telePhone"
+                               name="telePhone"
+                               placeholder="联系电话" required="" type="text">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">
+                        <span class="x-red">*</span>性别</label>
+                    <div class="layui-input-block">
+                        <input checked="" name="sex" title="男" type="radio" value="1">
+                        <input name="sex" title="女" type="radio" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">出生年月</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="birthDay"
+                               lay-verify="birthDay" name="birthDay"
+                               placeholder="出生年月：yyyy-MM-dd" type="text">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="password">
+                        <span class="x-red">*</span>密码</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="password"
+                               lay-verify="password"
+                               name="password"
+                               placeholder="密码不能为空"
+                               required="" type="password">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="repass">
+                        <span class="x-red">*</span>确认密码</label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="repass" lay-verify="repass" name="repass"
+                               placeholder="确认密码不能为空" required="" type="password">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">角色</label>
+                <div class="layui-input-block show-role-container">
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="layui-btn" lay-filter="add" lay-submit="" style="width: 120px">增加</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    layui.use(['form', 'layer', 'jquery', 'laydate'],
+        function () {
+            $ = layui.jquery;
+            var form = layui.form,
+                layer = layui.layer,
+                laydate = layui.laydate;
+
+            getAllRole(function () {
+                layui.form.render('radio')
+            });
+
+            //日期
+            laydate.render({
+                elem: '#birthDay'
+            });
+
+            //自定义验证规则
+            form.verify({
+                userName: function (value) {
+                    if (value.length == 0) {
+                        return '用户名不能为空';
+                    }
+                },
+                nikename: function (value) {
+                    if (value.length == 0) {
+                        return '昵称不能为空';
+                    }
+                },
+
+                password: [/(.+){6,12}$/, '密码必须6到12位'],
+                repass: function (value) {
+                    if ($('#password').val() != $('#repass').val()) {
+                        return '两次密码不一致';
+                    }
+                }
+            });
+
+            //监听提交
+            form.on('submit(add)', function (data) {
+                var rolelRadio = $("[name=roleId]:checked");
+                if (rolelRadio == undefined || rolelRadio.length <= 0) {
+                    layer.msg("请给该用户设置角色",
+                        {
+                            icon: 5
+                            , anim: 6
+                            , closeBtn: 0
+                            , time: 1000
+                        });
+                    return false;
+                }
+                data.field.roleId = rolelRadio.val();
+                console.log("field", data.field);
+
+                $.ajax({
+                    url: "/api/user/userAdd",
+                    type: "POST",
+                    data: JSON.stringify(data.field),
+                    dataType: 'json',
+                    contentType: "application/json;charset-UTF-8",
+                    success: function (result) {
+                        if (result.code != 0) {
+                            layer.msg(result.msg,
+                                {
+                                    icon: 5
+                                    , anim: 6
+                                    , closeBtn: 0
+                                    , time: 1000
+                                });
+                        } else {
+                            layer.msg("增加" + result.msg,
+                                {
+                                    icon: 6
+                                    , anim: 6
+                                    , closeBtn: 0
+                                    , time: 1000
+                                }, function () {
+                                    //关闭当前frame
+                                    xadmin.close();
+                                    // 可以对父窗口进行刷新
+                                    xadmin.father_reload();
+                                });
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+
+    /**
+     * 获取全部角色
+     * @param callback
+     */
+    function getAllRole(callback) {
+        $.ajax({
+            url: "/role/all",
+            type: "GET",
+            dataType: 'json',
+            success: function (result) {
+                var html = "";
+                if (result.code == 0) {
+                    for (i in result.data) {
+                        html += '<input type="radio"  name="roleId" value="' + result.data[i].id + '" title="' + result.data[i].name + '" >';
+                        html += '<div class="layui-unselect layui-form-radio layui-form-radioed">';
+                        html += '<i class="layui-anim layui-icon"></i>';
+                        html += '<div>' + result.data[i].name + '</div>';
+                        html += '</div>';
+                    }
+                    $(".show-role-container").html(html);
+                    callback();
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+
+</html>

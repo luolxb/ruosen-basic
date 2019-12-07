@@ -1,0 +1,190 @@
+<!doctype html>
+<html class="x-admin-sm" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>权限管理系统-角色列表</title>
+    <header th:replace="header::html"></header>
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body ">
+                    <form class="layui-form layui-col-space5">
+                        <div class="layui-inline layui-show-xs-block">
+                            <input autocomplete="off" class="layui-input" name="roleName" placeholder="请输入角色名"
+                                   type="text">
+                        </div>
+                        <div class="layui-inline layui-show-xs-block">
+                            <button class="layui-btn" lay-filter="search" lay-submit=""><i
+                                    class="layui-icon">&#xe615;</i></button>
+                        </div>
+                    </form>
+                </div>
+                <div class="layui-card-body ">
+                    <table id="rolePage" lay-filter="member"></table>
+                </div>
+
+                <div class="layui-card-body">
+                    <script id="bar" type="text/html">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+
+                <div class="layui-card-body">
+                    <script id="toolbar" type="text/html">
+                        <div class="layui-btn-container">
+                            <a class="layui-btn layui-btn-danger" onclick="delAll()"><i class="layui-icon"></i>批量删除
+                            </a>
+                            <button class="layui-btn" onclick="xadmin.open('添加角色','/api/role/role-add')"><i
+                                    class="layui-icon"></i>添加
+                            </button>
+                        </div>
+                    </script>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+
+    layui.use(['table', 'form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+
+        //第一个实例
+        table.render({
+            elem: '#rolePage'
+            , method: 'post'
+            , contentType: "application/json;charset-UTF-8"
+            , height: 520
+            , url: '/role/page' //数据接口
+            , page: true //开启分页
+            , toolbar: '#toolbar' //开启头部工具栏，并为其绑定左侧模板
+            , defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+                title: '提示'
+                , layEvent: 'LAYTABLE_TIPS'
+                , icon: 'layui-icon-tips'
+            }]
+            , loading: true
+            , cols: [
+                [ //表头
+                    {type: 'checkbox', fixed: 'left'}
+                    , {field: 'id', title: 'ID', align: 'center'}
+                    , {field: 'name', title: '角色名称', sort: true}
+                    , {field: 'description', title: '角色描述', sort: true}
+                    , {field: 'updateTime', title: '最后操作时间'}
+                    , {fixed: 'right', title: '操作', toolbar: '#bar', width: 140}
+                ]
+            ]
+            , id: 'id'
+        });
+
+        //监听工具条
+        table.on('tool(member)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'del') {
+                var ids = new Array();
+                ids.push(data.id);
+
+                delfunction(ids);
+            } else if (obj.event === 'edit') {
+                xadmin.open('编辑角色信息', '/api/role/role-edit?id=' + data.id);
+            }
+        });
+
+        delAll = function () {
+            var checkStatus = table.checkStatus('id'),
+                data = checkStatus.data;
+            var delList = new Array();
+            data.forEach(function (n, i) {
+                delList.push(n.id);
+            });
+
+            delfunction(delList);
+        };
+
+        function delfunction(ids) {
+            layer.msg('真的删除吗？', {
+                    time: 0 //不自动关闭
+                    , btn: ['必须啊', '再考虑下']
+                    , yes: function (index) {
+                        $.ajax({
+                            url: "/role/delete",
+                            type: "DELETE",
+                            contentType: "application/json;charset-UTF-8",
+                            data: JSON.stringify(ids),
+                            dataType: 'json',
+                            success: function (result) {
+                                if (result.code != 0) {
+                                    layer.msg(result.msg,
+                                        {
+                                            icon: 5
+                                            , anim: 6
+                                            , closeBtn: 0
+                                            , time: 2000
+                                        });
+                                } else {
+                                    layer.msg(result.msg, {
+                                        icon: 6
+                                        , anim: 6
+                                        , closeBtn: 0
+                                        , time: 1000
+                                    }, function (index1) {
+                                        layer.close(index1);
+                                        // xadmin.father_reload();
+                                        table.reload('id', 'rolePage');
+                                    });
+                                }
+
+                            },
+                        });
+                    }
+                }
+            );
+        };
+
+        //搜索
+        form.on('submit(search)', function (data) {
+
+            console.log("----", data.field)
+            table.render({
+                elem: '#rolePage'
+                , height: 520
+                , method: 'post'
+                , dataType: 'json'
+                , where: {
+                    "name": data.field.roleName
+                }
+                , contentType: "application/json;charset-UTF-8"
+                , url: '/role/page' //数据接口
+                , page: true //开启分页
+                , toolbar: '#toolbar' //开启头部工具栏，并为其绑定左侧模板
+                , defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+                    title: '提示'
+                    , layEvent: 'LAYTABLE_TIPS'
+                    , icon: 'layui-icon-tips'
+                }]
+                , loading: true
+                , id: 'id'
+                , cols: [
+                    [ //表头
+                        {type: 'checkbox', fixed: 'left'}
+                        , {field: 'id', title: 'ID', align: 'center'}
+                        , {field: 'name', title: '角色名称', sort: true}
+                        , {field: 'description', title: '角色描述', sort: true}
+                        , {field: 'updateTime', title: '最后操作时间'}
+                        , {fixed: 'right', title: '操作', toolbar: '#bar', width: 140}
+                    ]
+                ]
+            });
+            return false;
+        });
+    });
+</script>
+
+</html>

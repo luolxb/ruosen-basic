@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html class="x-admin-sm" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>新增权限信息</title>
+    <header th:replace="header::html"></header>
+    <link rel="stylesheet" th:href="@{/ztree/ztree/zTreeStyle/zTreeStyle.css}"/>
+    <link rel="stylesheet" th:href="@{/ztree/ztree/demo.css}"/>
+</head>
+
+<body>
+<div class="layui-fluid">
+    <div class="layui-row">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="name">
+                        <span class="x-red">*</span>菜单名
+                    </label>
+                    <div class="layui-input-inline">
+                        <input th:value="${sysPermissionVo.id}" id="id" name="id" type="hidden">
+                        <input autocomplete="off" class="layui-input" id="name" lay-verify="name" name="name"
+                               required="" th:value="${sysPermissionVo.name}"
+                               type="text">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="css">
+                        <span class="x-red"></span>样式
+                    </label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="css" lay-verify="css" name="css"
+                               required="" th:value="${sysPermissionVo.css}"
+                               type="text">
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="name">
+                        <span class="x-red"></span>链接
+                    </label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="href" lay-verify="href" name="href"
+                               th:value="${sysPermissionVo.href}"
+                               type="text">
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">
+                        <span class="x-red"></span>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">类型</label>
+                    <div class="layui-input-inline">
+                        <select id="selectType" lay-filter="type" name="type" th:value="${sysPermissionVo.type}">
+                            <option value="1">菜单</option>
+                            <option value="2">按钮</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="permission">
+                        <span class="x-red"></span>权限值
+                    </label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="permission" lay-verify="permission"
+                               name="permission" th:value="${sysPermissionVo.permission}"
+                               type="text">
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">
+                        <span class="x-red"></span>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label" for="sort">
+                        <span class="x-red">*</span>排序
+                    </label>
+                    <div class="layui-input-inline">
+                        <input autocomplete="off" class="layui-input" id="sort" lay-verify="sort" name="sort"
+                               required="" th:value="${sysPermissionVo.sort}"
+                               type="text">
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="col-md-2 control-label layui-form-label">上级菜单</label>
+                <div class="col-md-10">
+                    <input autocomplete="off" class="layui-input" id="parentId" lay-verify="parentId"
+                           name="parentId" style="display:none;"
+                           th:value="${sysPermissionVo.parentId}" type="text">
+                    <ul class="ztree" id="treeDemo"></ul>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <button class="layui-btn" lay-filter="add" lay-submit="" style="width: 120px">修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    layui.use(['form', 'layer'], function () {
+        $ = layui.jquery;
+        var form = layui.form;
+
+        //自定义验证规则
+        form.verify({
+            name: function (value) {
+                if (value.length < 2) {
+                    return '菜单名至少2个字符';
+                }
+            },
+            sort: function (value) {
+                if (value.length <= 0) {
+                    return '请填写整数排序值';
+                }
+            }
+        });
+
+        //监听提交
+        form.on('submit(add)', function (data) {
+            console.log(data);
+            var permissionIds = getCheckedMenuIds();
+            if (permissionIds.length <= 0) {
+                layer.msg('请选择对应的上级菜单');
+            } else {
+                data.field.parentId = permissionIds[0];
+                $.ajax({
+                    url: "/permission/edit",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(data.field),
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.code != 0) {
+                            layer.msg(result.msg,
+                                {
+                                    icon: 5
+                                    , anim: 6
+                                    , closeBtn: 0
+                                    , time: 1000
+                                });
+                        } else {
+                            layer.msg("修改" + result.msg,
+                                {
+                                    icon: 6
+                                    , anim: 6
+                                    , closeBtn: 0
+                                    , time: 1000
+                                }, function () {
+                                    //关闭当前frame
+                                    xadmin.close();
+                                    // 可以对父窗口进行刷新
+                                    xadmin.father_reload();
+                                });
+                        }
+                    }
+                });
+            }
+            return false;
+        });
+        initSelectType();
+    });
+    $.fn.zTree.init($("#treeDemo"), getSettting(true), onlyGetMenuTree());
+    initRadioCheckTree();
+</script>
+</body>
+</html>

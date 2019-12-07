@@ -1,0 +1,238 @@
+<!doctype html>
+<html class="x-admin-sm" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>权限管理系统-用户列表</title>
+    <header th:replace="header::html"></header>
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body ">
+                    <form class="layui-form layui-col-space5">
+                        <div class="layui-inline layui-show-xs-block">
+                            <input autocomplete="off" class="layui-input" id="start" lay-verify="start"
+                                   name="start" placeholder="开始日">
+                        </div>
+                        <div class="layui-inline layui-show-xs-block">
+                            <input autocomplete="off" class="layui-input" id="end" lay-verify="end" name="end"
+                                   placeholder="截止日">
+                        </div>
+                        <div class="layui-inline layui-show-xs-block">
+                            <input autocomplete="off" class="layui-input" name="userName" placeholder="请输入用户名"
+                                   type="text">
+                        </div>
+                        <div class="layui-inline layui-show-xs-block">
+                            <button class="layui-btn" lay-filter="search" lay-submit=""><i
+                                    class="layui-icon">&#xe615;</i></button>
+                        </div>
+                        <button class="layui-btn layui-btn-primary" type="reset">重置</button>
+                    </form>
+                </div>
+
+                <div class="layui-card-body ">
+                    <table id="userPage" lay-filter="member"></table>
+                </div>
+
+                <div class="layui-card-body">
+                    <script id="bar" type="text/html">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+
+                <div class="layui-card-body">
+                    <script id="toolbar" type="text/html">
+                        <div class="layui-btn-container">
+                            <a class="layui-btn layui-btn-danger" onclick="delAll()"><i class="layui-icon"></i>批量删除
+                            </a>
+                            <button class="layui-btn" onclick="xadmin.open('添加用户','/api/user/user-add')"><i
+                                    class="layui-icon"></i>添加
+                            </button>
+                        </div>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    layui.use(['table', 'laydate', 'form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var laydate = layui.laydate;
+        //日期
+        laydate.render({
+            elem: '#start'
+        });
+        laydate.render({
+            elem: '#end'
+        });
+
+        //第一个实例
+        table.render({
+            elem: '#userPage'
+            , height: 520
+            , method: 'post'
+            , contentType: "application/json;charset-UTF-8"
+            , url: '/user/userList' //数据接口
+            , page: true //开启分页
+            , toolbar: '#toolbar' //开启头部工具栏，并为其绑定左侧模板
+            , defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+                title: '提示'
+                , layEvent: 'LAYTABLE_TIPS'
+                , icon: 'layui-icon-tips'
+            }]
+            , loading: true
+            , id: 'id'
+            , cols: [
+                [ //表头
+                    {type: 'checkbox', fixed: 'left'}
+                    , {field: 'id', title: 'ID', sort: true}
+                    , {field: 'userName', title: '用户名', sort: true}
+                    , {field: 'nickName', title: '用户昵称', sort: true}
+                    , {field: 'headImgUrl', title: '用户头像', sort: true}
+                    , {field: 'phone', title: '用户电话', sort: true}
+                    , {field: 'email', title: '用户邮箱', sort: true}
+                    , {field: 'birthDay', title: '用户生日', sort: true}
+                    , {
+                    field: 'sex', title: '性别', sort: true, width: 80, templet: '#sexTpl'
+                }
+                    , {
+                    field: 'status', title: '状态', sort: true, width: 80, templet: function (d) {
+                        return d.status == 1 ? "启用" : "禁用";
+                    }
+                }
+                    , {fixed: 'right', title: '操作', width: 140, toolbar: '#bar'}
+                ]
+            ]
+        });
+
+        //监听工具条
+        table.on('tool(member)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'del') {
+                var ids = new Array();
+                ids.push(data.id);
+                delfunction(ids);
+            } else if (obj.event === 'edit') {
+                xadmin.open('编辑用户信息', '/api/user/user-edit?id=' + data.id);
+            }
+        });
+        //搜索
+        form.on('submit(search)', function (data) {
+            table.render({
+                elem: '#userPage'
+                , height: 520
+                , method: 'post'
+                , dataType: 'json'
+                , where: {
+                    "userName": data.field.userName,
+                    "start": data.field.start,
+                    "end": data.field.end
+                }
+                , contentType: "application/json;charset-UTF-8"
+                , url: '/user/userList' //数据接口
+                , page: true //开启分页
+                , toolbar: '#toolbar' //开启头部工具栏，并为其绑定左侧模板
+                , defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+                    title: '提示'
+                    , layEvent: 'LAYTABLE_TIPS'
+                    , icon: 'layui-icon-tips'
+                }]
+                , loading: true
+                , id: 'id'
+                , cols: [
+                    [ //表头
+                        {type: 'checkbox', fixed: 'left'}
+                        , {field: 'id', title: 'ID', sort: true}
+                        , {field: 'userName', title: '用户名', sort: true}
+                        , {field: 'nickName', title: '用户昵称', sort: true}
+                        , {field: 'headImgUrl', title: '用户头像', sort: true}
+                        , {field: 'phone', title: '用户电话', sort: true}
+                        , {field: 'email', title: '用户邮箱', sort: true}
+                        , {field: 'birthDay', title: '用户生日', sort: true}
+                        , {
+                        field: 'sex', title: '性别', sort: true, width: 80, templet: '#sexTpl'
+                    }
+                        , {
+                        field: 'status', title: '状态', sort: true, width: 80, templet: function (d) {
+                            return d.status == 1 ? "启用" : "禁用";
+                        }
+                    }
+                        , {fixed: 'right', title: '操作', width: 140, toolbar: '#bar'}
+                    ]
+                ]
+            });
+            return false;
+        });
+
+        delAll = function () {
+            var checkStatus = table.checkStatus('id'),
+                data = checkStatus.data;
+            var delList = new Array();
+            data.forEach(function (n, i) {
+                delList.push(n.id);
+            });
+
+            delfunction(delList);
+        };
+
+
+        function delfunction(ids) {
+            layer.msg('真的删除吗？', {
+                    time: 0 //不自动关闭
+                    , btn: ['必须啊', '再考虑下']
+                    , yes: function (index) {
+                        $.ajax({
+                            url: "/user/delete",
+                            type: "DELETE",
+                            contentType: "application/json;charset-UTF-8",
+                            data: JSON.stringify(ids),
+                            dataType: 'json',
+                            success: function (result) {
+                                if (result.code != 0) {
+                                    layer.msg(result.msg,
+                                        {
+                                            icon: 5
+                                            , anim: 6
+                                            , closeBtn: 0
+                                            , time: 2000
+                                        });
+                                } else {
+                                    layer.msg(result.msg, {
+                                        icon: 6
+                                        , anim: 6
+                                        , closeBtn: 0
+                                        , time: 1000
+                                    }, function (index1) {
+                                        layer.close(index1);
+                                        // xadmin.father_reload();
+                                        table.reload('id', 'userPage');
+                                    });
+                                }
+
+                            },
+                        });
+                    }
+                }
+            );
+        }
+
+    });
+
+
+</script>
+
+<script id="sexTpl" type="text/html">
+    {{#  if(d.sex == 0){ d.sex = '女'}}
+    <span style="color: #F581B1;">{{ d.sex }}</span>
+    {{#  } else { d.sex = '男'}}
+    {{ d.sex }}
+    {{#  } }}
+</script>
+
+</html>
